@@ -1,0 +1,103 @@
+#include <AccelStepper.h>
+
+// Arduino Mega board
+// RAMPS 1.4 SHIELD
+
+#define L_STEP_PIN 54
+#define L_DIR_PIN 55
+#define L_ENABLE_PIN 38
+
+#define R_STEP_PIN 60
+#define R_DIR_PIN 61
+#define R_ENABLE_PIN 56
+
+AccelStepper stepperL(AccelStepper::DRIVER, L_STEP_PIN, L_DIR_PIN);
+AccelStepper stepperR(AccelStepper::DRIVER, R_STEP_PIN, R_DIR_PIN);
+
+int L_target = 0;
+int R_target = 0;
+
+void setup() {
+
+  Serial.begin(9600);
+
+  pinMode(L_ENABLE_PIN , OUTPUT);
+  digitalWrite(L_ENABLE_PIN , LOW);
+
+  pinMode(R_ENABLE_PIN , OUTPUT);
+  digitalWrite(R_ENABLE_PIN , LOW);
+  
+  stepperL.setMaxSpeed(3200);//1100
+  stepperL.setAcceleration(3200);
+
+  stepperR.setMaxSpeed(3200);//1100
+  stepperR.setAcceleration(3200);
+}
+
+String command;
+
+void loop() {
+
+  if(Serial.available() > 0)
+  {
+    char c = Serial.read();
+
+    if (c == 'X')
+    {
+      command += c;
+      Serial.println("COMMAND SENT: " + command);
+      parseCommand(command);
+      command = "";
+    }
+    else
+    {
+      command += c;
+    }
+  }
+
+  stepperL.run();
+  stepperR.run();
+
+  if (stepperL.distanceToGo() == 0 &&  stepperR.distanceToGo() == 0)
+    Serial.println("Motor movement complete!");
+}
+
+void parseCommand(String com)
+{
+
+  int leftMotorSteps = com.substring(com.indexOf("L") + 1, com.indexOf("R")).toInt();
+  int rightMotorSteps = com.substring(com.indexOf("R") + 1, com.indexOf("A")).toInt();
+  int setServoAngle = com.substring(com.indexOf("A") + 1, com.indexOf("D")).toInt();
+  int sprayDuration = com.substring(com.indexOf("D") + 1, com.indexOf("B")).toInt();
+  int rtnServoAngle = com.substring(com.indexOf("B") + 1, com.indexOf("X")).toInt();
+
+  Serial.println(String(leftMotorSteps));
+  Serial.println(String(rightMotorSteps));
+  Serial.println(String(setServoAngle));
+  Serial.println(String(sprayDuration));
+  Serial.println(String(rtnServoAngle));
+
+  if(leftMotorSteps > 0 || rightMotorSteps > 0)
+  {
+
+    stepperL.moveTo(leftMotorSteps);
+    stepperR.moveTo(rightMotorSteps);
+
+
+    
+//    int pin = part2.toInt();
+//    //do  sotmething digitalWrite(pin, HIGH)
+//    Serial.println("PIN ON");
+    
+  }
+//  else if(part1.equalsIgnoreCase("pinoff"))
+//  {
+//    int pin = part2.toInt();
+//    //do  sotmething digitalWrite(pin, HIGH)
+//    Serial.println("PIN OFF");
+//  }
+  else
+  {
+    Serial.println("COMMAND NOT RECOGNISED");
+  }
+}
